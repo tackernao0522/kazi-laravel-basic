@@ -39,7 +39,10 @@
             <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
                 <div class="flex justify-center pt-8 sm:justify-start sm:pt-0">
                 </div>
-                <h1>About Page</h1>
+                <h1 style="color: white">About Page</h1>
+                <a href="{{ url('/') }}" style="color: white">Home</a> |
+                <a href="{{ URL::to('/about') }}" style="color: white">About</a> |
+                <a href="{{ route('contact') }}" style="color: white">Contact</a> |
 
                 <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
                     <div class="grid grid-cols-1 md:grid-cols-2">
