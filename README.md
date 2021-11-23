@@ -569,3 +569,15 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact'); //
     </body>
 </html>
 ```
+
+## Laravel8 Authentication Install
+
++ `$ composer require laravel/jetstream`を実行<br>
+
++ `$ php artisan jetstream:install livewire`を実行<br>
+
++ `$ php artisan migrate`を実行<br>
+
++ `$ npm install`を実行<br>
+
++ `$ npm run dev`を実行<br>
