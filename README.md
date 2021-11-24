@@ -1564,3 +1564,201 @@ class CategoryController extends Controller
     }
 }
 ```
+
+## Eloquent ORM Insert Data
+
++ `CategoryController.php`を編集(Eloquent)方法1<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        return view('admin.category.index');
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        Category::insert([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+            'created_at' => Carbon::now(),
+        ]);
+    }
+}
+```
+
++ `CategoryController.php`を編集(Eloquent)方法2 created_atは自動的に付与される<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        return view('admin.category.index');
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        $category = new Category;
+        $category->category_name = $request->category_name;
+        $category->user_id = Auth::user()->id;
+        $category->save();
+    }
+}
+```
+
++ `CategoryController`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        return view('admin.category.index');
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        Category::insert([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+            'created_at' => Carbon::now(),
+        ]);
+
+        // $category = new Category;
+        // $category->category_name = $request->category_name;
+        // $category->user_id = Auth::user()->id;
+        // $category->save();
+
+        return redirect()->back()->with('success', 'Category Inserted Successfull');
+    }
+}
+```
+
++ `resources/views/admin/cateory/index.blade.php`を編集<br>
+
+```
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            All Category<b></b>
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>{{ session("success") }}</strong>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        @endif
+
+                        <div class="card-header">All Category</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">SL No</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Created_at</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row"></th>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">Add Category</div>
+                        <div class="card-body">
+                            <form action="{{ route('store.category') }}" method="POST">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Category Name</label>
+                                    <input type="text" class="form-control" name="category_name" id="exampleInputEmail1" aria-describedby="emailHelp">
+                                    @error('category_name')
+                                    <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Category</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
