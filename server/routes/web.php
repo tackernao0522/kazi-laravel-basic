@@ -22,6 +22,7 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 
 // Category Controller
 Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
