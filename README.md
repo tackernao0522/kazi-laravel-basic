@@ -750,3 +750,78 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     </div>
 </x-app-layout>
 ```
+
+## Query Builder Read Users Data
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    $users = DB::table('users')->get();
+    return view('dashboard', compact('users'));
+})->name('dashboard');
+```
+
++ `dashboard.blade.php`を編集<br>
+
+```
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Hi.. <b>{{ Auth::user()->name }}</b>
+            <b style="float: right">Total Users
+                <span class="badge badge-danger">{{ count($users) }}</span>
+            </b>
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="container">
+            <div class="row">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">SL No</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Created_at</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php($i = 1)
+                        @foreach($users as $user)
+                        <tr>
+                            <th scope="row">{{ $i++ }}</th>
+                            <td>{{ $user->name }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>{{ Carbon\Carbon::parse($user->created_at)->diffForHumans() }}</td> // 編集
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
