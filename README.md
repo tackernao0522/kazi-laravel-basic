@@ -1108,7 +1108,7 @@ class Category extends Model
 {
     use SoftDeletes;
 
-    protected $fillabe = [
+    protected $fillable = [
         'user_id',
         'category_name',
     ];
@@ -2216,7 +2216,7 @@ class Category extends Model
 {
     use SoftDeletes;
 
-    protected $fillabe = [
+    protected $fillable = [
         'user_id',
         'category_name',
     ];
@@ -2370,7 +2370,7 @@ class Category extends Model
 {
     use SoftDeletes;
 
-    protected $fillabe = [
+    protected $fillable = [
         'user_id',
         'category_name',
     ];
@@ -2518,4 +2518,433 @@ class CategoryController extends Controller
         </div>
     </div>
 </x-app-layout>
+```
+
+## Eloquent ORM Edit & Update
+
++ `CategoryController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        $categories = Category::latest()->paginate(5);
+
+        return view('admin.category.index')->with('categories', $categories);
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        Category::insert([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+            'created_at' => Carbon::now(),
+        ]);
+
+        // $category = new Category;
+        // $category->category_name = $request->category_name;
+        // $category->user_id = Auth::user()->id;
+        // $category->save();
+
+        // $data = array();
+        // $data['category_name'] = $request->category_name;
+        // $data['user_id'] = Auth::user()->id;
+        // DB::table('categories')->insert($data);
+
+        return redirect()->back()->with('success', 'Category Inserted Successfull');
+    }
+}
+```
+
++ `Models\Category.php`を編集<br>
+
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Category extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'category_name',
+    ];
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
+}
+```
+
++ `resources/views/admin/category/index.blade.php`を編集<br>
+
+```
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            All Category<b></b>
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <strong>{{ session("success") }}</strong>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        @endif
+
+                        <div class="card-header">All Category</div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">SL No</th>
+                                    <th scope="col">Category Name</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Created_at</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{-- @php ($i = 1) --}}
+                                @foreach($categories as $category)
+                                <tr>
+                                    <th scope="row">{{ $categories->firstItem() + $loop->index }}</th>
+                                    <td>{{ $category->category_name }}</td>
+                                    <td>{{ $category->user->name }}</td>
+                                    <td>
+                                        @if($category->created_at == NULL)
+                                        <span class="text-danger">No Date Set</span>
+                                        @else
+                                        {{ Carbon\Carbon::parse($category->created_at)->diffForHumans() }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <a href="{{ url('category/edit/'. $category->id) }}" class="btn btn-info">Edit</a>
+                                        <a href="" class="btn btn-danger">Delete</a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        {{ $categories->links() }}
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">Add Category</div>
+                        <div class="card-body">
+                            <form action="{{ route('store.category') }}" method="POST">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="exampleInputEmail1">Category Name</label>
+                                    <input type="text" class="form-control" name="category_name" id="exampleInputEmail1" aria-describedby="emailHelp">
+                                    @error('category_name')
+                                    <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add Category</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    $users = DB::table('users')->get();
+    return view('dashboard', compact('users'));
+})->name('dashboard');
+```
+
++ `CategoryController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        // $categories = DB::table('categories')
+        //     ->join('users', 'categories.user_id', 'users.id')
+        //     ->select('categories.*', 'users.name')
+        //     ->latest()->paginate(5);
+
+        $categories = Category::latest()->paginate(5);
+        // $categories = DB::table('categories')->latest()->paginate(5);
+
+        return view('admin.category.index')->with('categories', $categories);
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        Category::insert([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+            'created_at' => Carbon::now(),
+        ]);
+
+        // $category = new Category;
+        // $category->category_name = $request->category_name;
+        // $category->user_id = Auth::user()->id;
+        // $category->save();
+
+        // $data = array();
+        // $data['category_name'] = $request->category_name;
+        // $data['user_id'] = Auth::user()->id;
+        // DB::table('categories')->insert($data);
+
+        return redirect()->back()->with('success', 'Category Inserted Successfull');
+    }
+
+    public function edit($id)
+    {
+        $category = Category::find($id);
+
+        return view('admin.category.edit')->with('category', $category);
+    }
+}
+```
+
++ `resources/views/admin/category/edit.blade.php`を作成<br>
+
+```
+<x-app-layout>
+  <x-slot name="header">
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+      Edit Category<b></b>
+    </h2>
+  </x-slot>
+
+  <div class="py-12">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">Edit Category</div>
+            <div class="card-body">
+              <form action="{{ url('category/update/' . $category->id) }}" method="POST">
+                @csrf
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Update Category</label>
+                  <input type="text" class="form-control" name="category_name" id="exampleInputEmail1" aria-describedby="emailHelp" value="{{ old('category_name', $category->category_name) }}">
+                  @error('category_name')
+                  <span class="text-danger">{{ $message }}</span>
+                  @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Update Category</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</x-app-layout>
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    $users = DB::table('users')->get();
+    return view('dashboard', compact('users'));
+})->name('dashboard');
+```
+
++ `CategoryController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class CategoryController extends Controller
+{
+    public function allCat()
+    {
+        // $categories = DB::table('categories')
+        //     ->join('users', 'categories.user_id', 'users.id')
+        //     ->select('categories.*', 'users.name')
+        //     ->latest()->paginate(5);
+
+        $categories = Category::latest()->paginate(5);
+        // $categories = DB::table('categories')->latest()->paginate(5);
+
+        return view('admin.category.index')->with('categories', $categories);
+    }
+
+    public function addCat(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'category_name' => 'required|unique:categories|max:255',
+            ],
+            [
+                'category_name.required' => 'Please Input Category Name',
+                'category_name.max' => 'Category Less Then 255Chars',
+            ]
+        );
+
+        Category::insert([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+            'created_at' => Carbon::now(),
+        ]);
+
+        // $category = new Category;
+        // $category->category_name = $request->category_name;
+        // $category->user_id = Auth::user()->id;
+        // $category->save();
+
+        // $data = array();
+        // $data['category_name'] = $request->category_name;
+        // $data['user_id'] = Auth::user()->id;
+        // DB::table('categories')->insert($data);
+
+        return redirect()->back()->with('success', 'Category Inserted Successfull');
+    }
+
+    public function edit($id)
+    {
+        $category = Category::find($id);
+
+        return view('admin.category.edit')->with('category', $category);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $update = Category::find($id)->update([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+        ]);
+
+        return redirect()
+            ->route('all.category')
+            ->with('success', 'Category Updated Successfull');
+    }
+}
 ```
