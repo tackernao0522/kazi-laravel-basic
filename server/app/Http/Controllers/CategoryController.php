@@ -12,12 +12,12 @@ class CategoryController extends Controller
 {
     public function allCat()
     {
-        $categories = DB::table('categories')
-            ->join('users', 'categories.user_id', 'users.id')
-            ->select('categories.*', 'users.name')
-            ->latest()->paginate(5);
+        // $categories = DB::table('categories')
+        //     ->join('users', 'categories.user_id', 'users.id')
+        //     ->select('categories.*', 'users.name')
+        //     ->latest()->paginate(5);
 
-        // $categories = Category::latest()->paginate(5);
+        $categories = Category::latest()->paginate(5);
         // $categories = DB::table('categories')->latest()->paginate(5);
 
         return view('admin.category.index')->with('categories', $categories);
@@ -52,5 +52,24 @@ class CategoryController extends Controller
         // DB::table('categories')->insert($data);
 
         return redirect()->back()->with('success', 'Category Inserted Successfull');
+    }
+
+    public function edit($id)
+    {
+        $category = Category::find($id);
+
+        return view('admin.category.edit')->with('category', $category);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $update = Category::find($id)->update([
+            'category_name' => $request->category_name,
+            'user_id' => Auth::user()->id,
+        ]);
+
+        return redirect()
+            ->route('all.category')
+            ->with('success', 'Category Updated Successfull');
     }
 }
