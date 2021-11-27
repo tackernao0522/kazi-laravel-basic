@@ -1,3 +1,4 @@
 .env
 docker/db/data/*
 .DS_Store
+server/public/image/brand/*
