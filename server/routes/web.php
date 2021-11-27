@@ -32,6 +32,7 @@ Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
 
 // Brand Controller
 Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
