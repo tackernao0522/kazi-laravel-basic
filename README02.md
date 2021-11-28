@@ -1184,3 +1184,314 @@ class BrandController extends Controller
     }
 }
 ```
+
+## Multiple Image Upload Part1
+
++ `$ php artisan make:model Multipic -m`を実行<br>
+
++ `create_multipics_table.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateMultipicsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('multipics', function (Blueprint $table) {
+            $table->id();
+            $table->string('image');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('multipics');
+    }
+}
+```
+
++ `$ php artisan migrate`を実行<br>
+
++ `Models\Multipic.php`を編集<br>
+
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Multipic extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'image'
+    ];
+}
+```
+
++ `resources/views/navigation-menu.blade.php`を編集 ヘッダーメニューを追加する<br>
+
+```
+ <!-- Navigation Links -->
+<div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+    <x-jet-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+        {{ __('Dashboard') }}
+    </x-jet-nav-link>
+
+    <x-jet-nav-link href="{{ route('all.category') }}">
+        All Category
+    </x-jet-nav-link>
+
+    <x-jet-nav-link href="{{ route('all.brand') }}">
+        Brand
+    </x-jet-nav-link>
+
+    <x-jet-nav-link href="{{ route('multi.image') }}">
+        Multi Image
+    </x-jet-nav-link>
+</div>
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    $users = DB::table('users')->get();
+    return view('dashboard', compact('users'));
+})->name('dashboard');
+```
+
++ `BrandController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Brand;
+use App\Models\Multipic;
+use Illuminate\Support\Carbon;
+use Image;
+
+class BrandController extends Controller
+{
+    public function allBrand()
+    {
+        $brands = Brand::latest()->paginate(5);
+
+        return view('admin.brand.index', compact('brands'));
+    }
+
+    public function storeBrand(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|unique:brands|min:4',
+                'brand_image' => 'required|mimes:jpg,jpeg,png',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $brand_image = $request->file('brand_image');
+
+        // $name_gen = hexdec(uniqid());
+        // $image_ext = strtolower($brand_image->getClientOriginalExtension());
+        // $img_name = $name_gen . '.' . $image_ext;
+        // $up_location = 'image/brand/';
+        // $last_img = $up_location . $img_name;
+        // $brand_image->move($up_location, $img_name);
+
+        $name_gen = hexdec(uniqid()) . '.' . $brand_image->getClientOriginalExtension();
+        Image::make($brand_image)->resize(300, 200)->save('image/brand/' . $name_gen);
+
+        $last_img = 'image/brand/' . $name_gen;
+
+
+        Brand::insert([
+            'brand_name' => $request->brand_name,
+            'brand_image' => $last_img,
+            'created_at' => Carbon::now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Brand Inserted Successfully');
+    }
+
+    public function edit($id)
+    {
+        $brand = Brand::find($id);
+
+        return view('admin.brand.edit')->with('brand', $brand);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|min:4',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $old_image = $request->old_image;
+
+        $brand_image = $request->file('brand_image');
+
+        if ($brand_image) {
+            $name_gen = hexdec(uniqid());
+            $image_ext = strtolower($brand_image->getClientOriginalExtension());
+            $img_name = $name_gen . '.' . $image_ext;
+            $up_location = 'image/brand/';
+            $last_img = $up_location . $img_name;
+            $brand_image->move($up_location, $img_name);
+
+            unlink($old_image);
+
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'brand_image' => $last_img,
+                'created_at' => Carbon::now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Brand Updated Successfully');
+        } else {
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'created_at' => Carbon::now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Brand Updated Successfully');
+        }
+    }
+
+    public function delete($id)
+    {
+        $image = Brand::find($id);
+        $old_image = $image->brand_image;
+        unlink($old_image);
+
+        Brand::find($id)->delete();
+
+        return redirect()->back()->with("success", "Brand Delete Successfully");
+    }
+
+    public function multipic()
+    {
+        $images = Multipic::all();
+        return view('admin.multipic.index', compact('images'));
+    }
+}
+```
+
++ `resources/veiws/admin/multipic`ディレクトリを作成<br>
+
++ `resources/views/admin/multipic/index.blade.php`を作成<br>
+
+```
+<x-app-layout>
+  <x-slot name="header">
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+      Multi Picture<b></b>
+    </h2>
+  </x-slot>
+
+  <div class="py-12">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Multi Image</div>
+            <div class="card-body">
+              <form action="" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Brand Image</label>
+                  <input type="file" class="form-control" name="image" id="exampleInputEmail1" aria-describedby="emailHelp">
+                  @error('image')
+                  <span class="text-danger">{{ $message }}</span>
+                  @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Add Image</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</x-app-layout>
+```
