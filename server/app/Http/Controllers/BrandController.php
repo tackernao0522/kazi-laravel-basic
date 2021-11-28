@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Brand;
 use Illuminate\Support\Carbon;
+use Image;
 
 class BrandController extends Controller
 {
@@ -20,7 +21,7 @@ class BrandController extends Controller
         $validatedData = $request->validate(
             [
                 'brand_name' => 'required|unique:brands|min:4',
-                'brand_image' => 'required|mimes:jpg.jpen,png',
+                'brand_image' => 'required|mimes:jpg,jpeg,png',
             ],
             [
                 'brand_name.required' => 'Please Input Brand Name',
@@ -30,12 +31,18 @@ class BrandController extends Controller
 
         $brand_image = $request->file('brand_image');
 
-        $name_gen = hexdec(uniqid());
-        $image_ext = strtolower($brand_image->getClientOriginalExtension());
-        $img_name = $name_gen . '.' . $image_ext;
-        $up_location = 'image/brand/';
-        $last_img = $up_location . $img_name;
-        $brand_image->move($up_location, $img_name);
+        // $name_gen = hexdec(uniqid());
+        // $image_ext = strtolower($brand_image->getClientOriginalExtension());
+        // $img_name = $name_gen . '.' . $image_ext;
+        // $up_location = 'image/brand/';
+        // $last_img = $up_location . $img_name;
+        // $brand_image->move($up_location, $img_name);
+
+        $name_gen = hexdec(uniqid()) . '.' . $brand_image->getClientOriginalExtension();
+        Image::make($brand_image)->resize(300, 200)->save('image/brand/' . $name_gen);
+
+        $last_img = 'image/brand/' . $name_gen;
+
 
         Brand::insert([
             'brand_name' => $request->brand_name,
