@@ -1495,3 +1495,300 @@ class BrandController extends Controller
   </div>
 </x-app-layout>
 ```
+
+## Multiple Image Upload Part2
+
++ `resources/views/admin/multipic/index.blade.php`を編集<br>
+
+```
+<x-app-layout>
+  <x-slot name="header">
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+      Multi Picture<b></b>
+    </h2>
+  </x-slot>
+
+  <div class="py-12">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card">
+
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Multi Image</div>
+            <div class="card-body">
+              <form action="{{ route('store.image') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Brand Image</label>
+                  <input type="file" class="form-control" name="image" id="exampleInputEmail1" aria-describedby="emailHelp" multiple="">
+                  @error('image')
+                  <span class="text-danger">{{ $message }}</span>
+                  @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Add Image</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</x-app-layout>
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    $users = DB::table('users')->get();
+    return view('dashboard', compact('users'));
+})->name('dashboard');
+```
+
++ `public/image/multi`ディレクトリを作成<br>
+
++ `BrandController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Brand;
+use App\Models\Multipic;
+use Illuminate\Support\Carbon;
+use Image;
+
+class BrandController extends Controller
+{
+    public function allBrand()
+    {
+        $brands = Brand::latest()->paginate(5);
+
+        return view('admin.brand.index', compact('brands'));
+    }
+
+    public function storeBrand(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|unique:brands|min:4',
+                'brand_image' => 'required|mimes:jpg,jpeg,png',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $brand_image = $request->file('brand_image');
+
+        // $name_gen = hexdec(uniqid());
+        // $image_ext = strtolower($brand_image->getClientOriginalExtension());
+        // $img_name = $name_gen . '.' . $image_ext;
+        // $up_location = 'image/brand/';
+        // $last_img = $up_location . $img_name;
+        // $brand_image->move($up_location, $img_name);
+
+        $name_gen = hexdec(uniqid()) . '.' . $brand_image->getClientOriginalExtension();
+        Image::make($brand_image)->resize(300, 200)->save('image/brand/' . $name_gen);
+
+        $last_img = 'image/brand/' . $name_gen;
+
+
+        Brand::insert([
+            'brand_name' => $request->brand_name,
+            'brand_image' => $last_img,
+            'created_at' => Carbon::now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Brand Inserted Successfully');
+    }
+
+    public function edit($id)
+    {
+        $brand = Brand::find($id);
+
+        return view('admin.brand.edit')->with('brand', $brand);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|min:4',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $old_image = $request->old_image;
+
+        $brand_image = $request->file('brand_image');
+
+        if ($brand_image) {
+            $name_gen = hexdec(uniqid());
+            $image_ext = strtolower($brand_image->getClientOriginalExtension());
+            $img_name = $name_gen . '.' . $image_ext;
+            $up_location = 'image/brand/';
+            $last_img = $up_location . $img_name;
+            $brand_image->move($up_location, $img_name);
+
+            unlink($old_image);
+
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'brand_image' => $last_img,
+                'created_at' => Carbon::now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Brand Updated Successfully');
+        } else {
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'created_at' => Carbon::now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Brand Updated Successfully');
+        }
+    }
+
+    public function delete($id)
+    {
+        $image = Brand::find($id);
+        $old_image = $image->brand_image;
+        unlink($old_image);
+
+        Brand::find($id)->delete();
+
+        return redirect()->back()->with("success", "Brand Delete Successfully");
+    }
+
+    public function multipic()
+    {
+        $images = Multipic::all();
+        return view('admin.multipic.index', compact('images'));
+    }
+
+    public function storeImg(Request $request)
+    {
+        $image = $request->file('image');
+
+        foreach ($image as $multi_img) {
+            $name_gen = hexdec(uniqid()) . '.' . $multi_img->getClientOriginalExtension();
+            Image::make($multi_img)->resize(300, 300)->save('image/multi/' . $name_gen);
+
+            $last_img = 'image/multi/' . $name_gen;
+
+
+            Multipic::insert([
+                'image' => $last_img,
+                'created_at' => Carbon::now(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Multi Image Inserted Successfully');
+    }
+}
+```
+
++ `resources/views/admin/multipic/index.blade.php`を編集<br>
+
+```
+<x-app-layout>
+  <x-slot name="header">
+    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+      Multi Picture<b></b>
+    </h2>
+  </x-slot>
+
+  <div class="py-12">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="card-group">
+            @foreach($images as $multi)
+              <div class="col-md-4 mt-5">
+                <div class="card">
+                  <img src="{{ asset($multi->image) }}">
+                </div>
+              </div>
+            @endforeach
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Multi Image</div>
+            <div class="card-body">
+              <form action="{{ route('store.image') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Brand Image</label>
+                  <input type="file" class="form-control" name="image[]" id="exampleInputEmail1" aria-describedby="emailHelp" multiple="">
+                  @error('image')
+                  <span class="text-danger">{{ $message }}</span>
+                  @enderror
+                </div>
+                <button type="submit" class="btn btn-primary">Add Image</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</x-app-layout>
+```
