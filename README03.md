@@ -146,3 +146,76 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
         ]),
     ],
 ```
+
+## Middleware Auth Users Access Control
+
++ `CategoryController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Category;
+use Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class CategoryController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    // 以下省略
+}
+```
+
++ `BrandController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Brand;
+use App\Models\Multipic;
+use Illuminate\Support\Carbon;
+use Image;
+
+class BrandController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    // 以下省略
+}
+```
+
++ `ContactController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ContactController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    function index()
+    {
+        return view('contact');
+    }
+}
+```
