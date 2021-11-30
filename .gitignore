@@ -2,3 +2,5 @@
 docker/db/data/*
 .DS_Store
 server/public/image/*
+server/public/backend/*
+server/public/frontend/*
