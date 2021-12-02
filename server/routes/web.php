@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
 use App\Models\Brand;
 // use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,10 @@ Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
 // Multi Image Route
 Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
 Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();

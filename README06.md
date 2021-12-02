@@ -1,3 +1,73 @@
+## Setup Home Slider Page Part1
+
++ `$ php artisan maka:model Slider -m`を実行<br>
+
++ `create_sliders_table.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateSlidersTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('sliders', function (Blueprint $table) {
+            $table->id();
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->string('image')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('sliders');
+    }
+}
+```
+
++ `$ php artisan migrate`を実行<br>
+
++ `app\Models\Slider.php`を編集<br>
+
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Slider extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'title',
+        'description',
+        'image',
+    ];
+}
+```
+
++ `resources/views/admin/body/sidebar.blade.php`を編集<br>
+
+```
 <aside class="left-sidebar bg-sidebar">
   <div id="sidebar" class="sidebar sidebar-with-footer">
     <!-- Aplication Brand -->
@@ -25,7 +95,7 @@
           <ul class="collapse show" id="dashboard" data-parent="#sidebar-menu">
             <div class="sub-menu">
               <li class="active">
-                <a class="sidenav-item-link" href="{{ route('home.slider') }}">
+                <a class="sidenav-item-link" href="{{ route('home.slider') }}"> // 編集
                   <span class="nav-text">Slider</span>
                 </a>
               </li>
@@ -473,3 +543,157 @@
     <hr class="separator" />
   </div>
 </aside>
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Models\Brand;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+
+    return view('home')->with('brands', $brands);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider'); // 追記
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+```
+
++ `$ php artisan make:controller HomeController`を実行<br>
+
++ `resources/views/admin/slider`ディレクトリを作成<br>
+
++ `resources/views/admin/slider/index.blade.php`を作成<br>
+
++ `HomeController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Slider;
+
+class HomeController extends Controller
+{
+    public function homeSlider()
+    {
+        $sliders = Slider::latest()->get();
+
+        return view('admin.slider.index')->with('sliders', $sliders);
+    }
+}
+```
+
++ `resources/views/admin/slider/index.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <h4>Home Slider</h4>
+      <a href=""><button class="btn btn-info">Add Slider</button></a>
+      <br><br>
+      <div class="col-md-12">
+        <div class="card">
+          @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>{{ session("success") }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          @endif
+
+          <div class="card-header">All Slider</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">SL</th>
+                <th scope="col">Slider Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">Image</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{-- @php ($i = 1) --}}
+              @foreach($sliders as $slider)
+              <tr>
+                <th scope="row">{{ $sliders->firstItem() + $loop->index }}</th>
+                <td>{{ $slider->title }}</td>
+                <td>{{ $slider->description }}</td>
+                <td><img src="{{ asset($slider->image) }}" style="height: 40px; width: 70px"></td>
+                <td>
+                  <a href="{{ url('slider/edit/'. $slider->id) }}" class="btn btn-info">Edit</a>
+                  <a href="{{ url('slider/delete/' . $slider->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```
