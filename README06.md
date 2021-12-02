@@ -697,3 +697,379 @@ class HomeController extends Controller
 </div>
 @endsection
 ```
+
+## Setup Home Slider Page Part2
+
++ `resources/views/admin/slider/index.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <h4>Home Slider</h4>
+      <a href="{{ route('add.slider') }}"><button class="btn btn-info">Add Slider</button></a> // 編集
+      <br><br>
+      <div class="col-md-12">
+        <div class="card">
+          @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>{{ session("success") }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          @endif
+
+          <div class="card-header">All Slider</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">SL</th>
+                <th scope="col">Slider Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">Image</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{-- @php ($i = 1) --}}
+              @foreach($sliders as $slider)
+              <tr>
+                <th scope="row">{{ $sliders->firstItem() + $loop->index }}</th>
+                <td>{{ $slider->title }}</td>
+                <td>{{ $slider->description }}</td>
+                <td><img src="{{ asset($slider->image) }}" style="height: 40px; width: 70px"></td>
+                <td>
+                  <a href="{{ url('slider/edit/'. $slider->id) }}" class="btn btn-info">Edit</a>
+                  <a href="{{ url('slider/delete/' . $slider->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Models\Brand;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+
+    return view('home')->with('brands', $brands);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider'); // 追記
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+```
+
++ `HomeController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Slider;
+
+class HomeController extends Controller
+{
+    public function homeSlider()
+    {
+        $sliders = Slider::latest()->get();
+
+        return view('admin.slider.index')->with('sliders', $sliders);
+    }
+
+    public function addSlider()
+    {
+        return view('admin.slider.create');
+    }
+}
+```
+
++ `resources/views/admin/slider/create.blade.php`を作成<br>
+
++ `resources/views/admin/slider/create.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="col-lg-12">
+  <div class="card card-default">
+    <div class="card-header card-header-border-bottom">
+      <h2>Create Slider</h2>
+    </div>
+    <div class="card-body">
+      <form action="{{ route('store.slider') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="form-group">
+          <label for="exampleFormControlInput1">Slider Title</label>
+          <input type="text" class="form-control" id="exampleFormControlInput1" name="title" value="{{ old('title') }}" placeholder="Slider Title">
+        </div>
+
+        <div class="form-group">
+          <label for="exampleFormControlTextarea1">Slider Description</label>
+          <textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="3">{{ old('description') }}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="exampleFormControlFile1">Slider Image</label>
+          <input type="file" name="image" class="form-control-file" id="exampleFormControlFile1">
+        </div>
+        <div class="form-footer pt-4 pt-5 mt-4 border-top">
+          <button type="submit" class="btn btn-primary btn-default">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+@endsection
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Models\Brand;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+
+    return view('home')->with('brands', $brands);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+```
+
++ `HomeController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Slider;
+use Illuminate\Support\Carbon;
+use Image;
+use Auth;
+
+class HomeController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function homeSlider()
+    {
+        $sliders = Slider::latest()->get();
+
+        return view('admin.slider.index')->with('sliders', $sliders);
+    }
+
+    public function addSlider()
+    {
+        return view('admin.slider.create');
+    }
+
+    public function storeSlider(Request $request)
+    {
+        $slider_image = $request->file('image');
+
+        $name_gen = hexdec(uniqid()) . '.' . $slider_image->getClientOriginalExtension();
+        Image::make($slider_image)->resize(1920, 1088)->save('image/slider/' . $name_gen);
+
+        $last_img = 'image/slider/' . $name_gen;
+
+
+        Slider::insert([
+            'title' => $request->title,
+            'description' => $request->description,
+            'image' => $last_img,
+            'created_at' => Carbon::now(),
+        ]);
+
+        return redirect()->route('home.slider')->with('success', 'Slider Inserted Successfully');
+    }
+}
+```
+
++ `resources/views/admin/slider/index.blade.php`を修正<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <h4>Home Slider</h4>
+      <a href="{{ route('add.slider') }}"><button class="btn btn-info">Add Slider</button></a>
+      <br><br>
+      <div class="col-md-12">
+        <div class="card">
+          @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>{{ session("success") }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          @endif
+
+          <div class="card-header">All Slider</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">SL</th>
+                <th scope="col">Slider Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">Image</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @php ($i = 1) // コメントアウト解除
+              @foreach($sliders as $slider)
+              <tr>
+                <th scope="row">{{ $i++ }}</th> // 修正
+                <td>{{ $slider->title }}</td>
+                <td>{{ $slider->description }}</td>
+                <td><img src="{{ asset($slider->image) }}" style="height: 40px; width: 70px"></td>
+                <td>
+                  <a href="{{ url('slider/edit/'. $slider->id) }}" class="btn btn-info">Edit</a>
+                  <a href="{{ url('slider/delete/' . $slider->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```

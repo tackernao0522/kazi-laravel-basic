@@ -51,6 +51,8 @@ Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.ima
 
 // Admin All Route
 Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
 
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
