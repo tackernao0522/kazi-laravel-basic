@@ -1073,3 +1073,104 @@ class HomeController extends Controller
 </div>
 @endsection
 ```
+
+## Setup Home Slider Page Part3
+
++ `resources/views/admin/slider/index.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <h4>Home Slider</h4>
+      <a href="{{ route('add.slider') }}"><button class="btn btn-info">Add Slider</button></a>
+      <br><br>
+      <div class="col-md-12">
+        <div class="card">
+          @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>{{ session("success") }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          @endif
+
+          <div class="card-header">All Slider</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col" width="5%">SL</th>
+                <th scope="col" width="15%">Slider Title</th>
+                <th scope="col" width="25%">Description</th>
+                <th scope="col" width="15%">Image</th>
+                <th scope="col" width="15%">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @php ($i = 1)
+              @foreach($sliders as $slider)
+              <tr>
+                <th scope="row">{{ $i++ }}</th>
+                <td>{{ $slider->title }}</td>
+                <td>{{ $slider->description }}</td>
+                <td><img src="{{ asset($slider->image) }}" style="height: 40px; width: 70px"></td>
+                <td>
+                  <a href="{{ url('slider/edit/'. $slider->id) }}" class="btn btn-info">Edit</a>
+                  <a href="{{ url('slider/delete/' . $slider->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```
+
++ `resources/views/layouts/body/slider.blade.php`を編集<br>
+
+```
+@php
+$sliders = DB::table('sliders')->get();
+@endphp
+<!-- ======= Hero Section ======= -->
+<section id="hero">
+  <div id="heroCarousel" class="carousel slide carousel-fade" data-ride="carousel">
+
+    <div class="carousel-inner" role="listbox">
+      @foreach($sliders as $key => $slider)
+      <!-- Slide 1 -->
+      <div class="carousel-item {{ $key == 0 ? 'active' : '' }}" style="background-image: url({{asset($slider->image)}});">
+        <div class="carousel-container">
+          <div class="carousel-content animate__animated animate__fadeInUp">
+            <h2>{{ $slider->title }}</h2>
+            <p>{{ $slider->description }}</p>
+            <div class="text-center"><a href="" class="btn-get-started">Read More</a></div>
+          </div>
+        </div>
+      </div>
+      @endforeach
+    </div>
+
+    <a class="carousel-control-prev" href="#heroCarousel" role="button" data-slide="prev">
+      <span class="carousel-control-prev-icon icofont-simple-left" aria-hidden="true"></span>
+      <span class="sr-only">Previous</span>
+    </a>
+
+    <a class="carousel-control-next" href="#heroCarousel" role="button" data-slide="next">
+      <span class="carousel-control-next-icon icofont-simple-right" aria-hidden="true"></span>
+      <span class="sr-only">Next</span>
+    </a>
+
+    <ol class="carousel-indicators" id="hero-carousel-indicators"></ol>
+
+  </div>
+</section><!-- End Hero -->
+```
