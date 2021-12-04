@@ -57,6 +57,8 @@ Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('stor
 
 // Home Abut All Route
 Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
+Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about');
+Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
