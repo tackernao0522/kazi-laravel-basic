@@ -61,6 +61,7 @@ Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about'
 Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
 Route::get('/about/edit/{id}', [AboutController::class, 'editAbout']);
 Route::post('/update/home_about/{id}', [AboutController::class, 'updateAbout']);
+Route::get('/about/delete/{id}', [AboutController::class, 'deleteAbout']);
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
