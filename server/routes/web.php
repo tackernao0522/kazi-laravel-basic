@@ -5,6 +5,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutController;
 use App\Models\Brand;
 // use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,8 @@ Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.sl
 Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
 Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
 
+// Home Abut All Route
+Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
