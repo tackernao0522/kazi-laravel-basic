@@ -5,7 +5,7 @@
   <div class="container">
     <div class="row">
       <h4>Home About</h4>
-      <a href=""><button class="btn btn-info">Add About</button></a>
+      <a href="{{ route('add.about') }}"><button class="btn btn-info">Add About</button></a>
       <br><br>
       <div class="col-md-12">
         <div class="card">
@@ -36,7 +36,7 @@
                 <th scope="row">{{ $i++ }}</th>
                 <td>{{ $about->title }}</td>
                 <td>{{ $about->short_dis }}</td>
-                <td>{{ $abut->long_dis }}</td>
+                <td>{{ $about->long_dis }}</td>
                 <td>
                   <a href="{{ url('about/edit/'. $about->id) }}" class="btn btn-info">Edit</a>
                   <a href="{{ url('about/delete/' . $about->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
