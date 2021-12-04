@@ -16,8 +16,11 @@ Route::get('/email/verify', function () {
 
 Route::get('/', function () {
     $brands = DB::table('brands')->get();
+    $abouts = DB::table('home_abouts')->first();
 
-    return view('home')->with('brands', $brands);
+    return view('home')
+        ->with('brands', $brands)
+        ->with('abouts', $abouts);
 });
 
 Route::get('/home', function () {
