@@ -37,4 +37,23 @@ class AboutController extends Controller
         return redirect()->route('home.about')
             ->with('sucess', 'About Inserted Succsessfully');
     }
+
+    public function editAbout($id)
+    {
+        $home_about = HomeAbout::find($id);
+
+        return view('admin.home.edit')->with('home_about', $home_about);
+    }
+
+    public function updateAbout(Request $request, $id)
+    {
+        HomeAbout::find($id)->update([
+            'title' => $request->title,
+            'short_dis' => $request->short_dis,
+            'long_dis' => $request->long_dis,
+        ]);
+
+        return redirect()->route('home.about')
+            ->with('success', 'About Updated Successfully');
+    }
 }
