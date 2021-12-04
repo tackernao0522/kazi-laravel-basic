@@ -977,7 +977,7 @@ class AboutController extends Controller
 }
 ```
 
-## Setup Home Page About Section Part4
+## Setup Home Page About Section Part5
 
 + `web.php`を編集<br>
 
