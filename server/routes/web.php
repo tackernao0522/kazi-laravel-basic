@@ -76,6 +76,8 @@ Route::get('/portfolio', [AboutController::class, 'portfolio'])->name('portfolio
 Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('admin.contact');
 Route::get('/admin/add/contact', [ContactController::class, 'adminAddContact'])->name('add.contact');
 Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContact'])->name('store.contact');
+Route::get('/admin/message', [ContactController::class, 'adminMessage'])->name('admin.message');
+Route::get('/message/delete/{id}', [ContactController::class, 'deleteMessage']);
 
 // Home Contact Page Route
 Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
