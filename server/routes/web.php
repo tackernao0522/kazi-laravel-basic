@@ -79,6 +79,7 @@ Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContac
 
 // Home Contact Page Route
 Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
+Route::post('/contact/form', [ContactController::class, 'contactForm'])->name('contact.form');
 
 
 
