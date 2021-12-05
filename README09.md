@@ -1,3 +1,74 @@
+## Setup Contact Page Part1
+
++ `php artisan make:model Contact -m`を実行<br>
+
++ `create_contacts_table.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateContactsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('contacts', function (Blueprint $table) {
+            $table->id();
+            $table->text('address');
+            $table->string('email');
+            $table->string('phone');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('contacts');
+    }
+}
+```
+
++ `app/Models/Contact.php`を編集<br>
+
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'address',
+        'email',
+        'phone',
+    ];
+}
+```
+
++ `php artisan migrate`を実行<br>
+
+
++ `resources/views/admin/body/sidebar.blade.php`を編集<br>
+
+```
 <aside class="left-sidebar bg-sidebar">
   <div id="sidebar" class="sidebar sidebar-with-footer">
     <!-- Aplication Brand -->
@@ -59,7 +130,7 @@
           <ul class="collapse" id="ui-elements" data-parent="#sidebar-menu">
             <div class="sub-menu">
               <li class="active">
-                <a class="sidenav-item-link" href="{{ route('admin.contact') }}">
+                <a class="sidenav-item-link" href="{{ route('admin.contact') }}"> // 編集
                   <span class="nav-text">Contact Profile</span>
                 </a>
               </li>
@@ -256,3 +327,191 @@
     <hr class="separator" />
   </div>
 </aside>
+```
+
++ `$ php artisan make:controller ContactController`を実行<br>
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutController;
+use App\Models\Brand;
+use App\Models\Multipic;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+    $abouts = DB::table('home_abouts')->first();
+    $images = Multipic::all();
+
+    return view('home')
+        ->with('brands', $brands)
+        ->with('abouts', $abouts)
+        ->with('images', $images);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
+
+// Home Abut All Route
+Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
+Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about');
+Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
+Route::get('/about/edit/{id}', [AboutController::class, 'editAbout']);
+Route::post('/update/home_about/{id}', [AboutController::class, 'updateAbout']);
+Route::get('/about/delete/{id}', [AboutController::class, 'deleteAbout']);
+
+// Portfolio Page Route
+Route::get('/portfolio', [AboutController::class, 'portfolio'])->name('portfolio');
+
+// Admin Contact Page Route 追記
+Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('admin.contact');
+
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+```
+
++ `resources/views/admin/contact`ディレクトリを作成<br>
+
++ `resources/views/admin/contact/index.blade.php`ファイルを作成<br>
+
++ `resources/views/admin/contact/create.blade.php`ファイルを作成<br>
+
++ `ContactController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Contact;
+use Illuminate\Http\Request;
+
+class ContactController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function adminContact()
+    {
+        $contacts = Contact::all();
+
+        return view('admin.contact.index')
+            ->with('contacts', $contacts);
+    }
+}
+```
+
++ `resources/views/admin/contact/index.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <h4>Contact Page</h4>
+      <a href="{{-- route('add.contact') --}}"><button class="btn btn-info">Add Contact</button></a>
+      <br><br>
+      <div class="col-md-12">
+        <div class="card">
+          @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>{{ session("success") }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          @endif
+
+          <div class="card-header">All Contact Data</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col" width="5%">SL</th>
+                <th scope="col" width="15%">Contact Address</th>
+                <th scope="col" width="25%">Contact Email</th>
+                <th scope="col" width="15%">Contact Phone</th>
+                <th scope="col" width="15%">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @php ($i = 1)
+              @foreach($contacts as $contact)
+              <tr>
+                <th scope="row">{{ $i++ }}</th>
+                <td>{{ $contact->address }}</td>
+                <td>{{ $contact->email }}</td>
+                <td>{{ $contact->phone }}</td>
+                <td>
+                  <a href="{{ url('contact/edit/' . $contact->id) }}" class="btn btn-info">Edit</a>
+                  <a href="{{ url('contact/delete/' . $contact->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```
+
+
