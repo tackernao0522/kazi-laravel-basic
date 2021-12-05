@@ -7,6 +7,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AboutController;
 use App\Models\Brand;
+use App\Models\Multipic;
 // use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -17,10 +18,12 @@ Route::get('/email/verify', function () {
 Route::get('/', function () {
     $brands = DB::table('brands')->get();
     $abouts = DB::table('home_abouts')->first();
+    $images = Multipic::all();
 
     return view('home')
         ->with('brands', $brands)
-        ->with('abouts', $abouts);
+        ->with('abouts', $abouts)
+        ->with('images', $images);
 });
 
 Route::get('/home', function () {
