@@ -77,6 +77,9 @@ Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('
 Route::get('/admin/add/contact', [ContactController::class, 'adminAddContact'])->name('add.contact');
 Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContact'])->name('store.contact');
 
+// Home Contact Page Route
+Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
+
 
 
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {

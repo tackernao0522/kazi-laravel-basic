@@ -878,3 +878,297 @@ class ContactController extends Controller
 }
 ```
 
+## Setup Contact Page Part3
+
++ `resources/views/layouts/body/header.blade.php`を編集<br>
+
+```
+<!-- ======= Header ======= -->
+<header id="header" class="fixed-top">
+  <div class="container d-flex align-items-center">
+    <h1 class="logo mr-auto"><a href="index.html"><span>Com</span>pany</a></h1>
+    <!-- Uncomment below if you prefer to use an image logo -->
+    <!-- <a href="index.html" class="logo mr-auto"><img src="assets/img/logo.png" alt="" class="img-fluid"></a>-->
+
+    <nav class="nav-menu d-none d-lg-block">
+      <ul>
+        <li class="active"><a href="/">Home</a></li>
+
+        <li class="drop-down"><a href="">About</a>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="team.html">Team</a></li>
+            <li><a href="testimonials.html">Testimonials</a></li>
+            <li class="drop-down"><a href="#">Deep Drop Down</a>
+              <ul>
+                <li><a href="#">Deep Drop Down 1</a></li>
+                <li><a href="#">Deep Drop Down 2</a></li>
+                <li><a href="#">Deep Drop Down 3</a></li>
+                <li><a href="#">Deep Drop Down 4</a></li>
+                <li><a href="#">Deep Drop Down 5</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+
+        <li><a href="services.html">Services</a></li>
+        <li><a href="{{ route('portfolio') }}">Portfolio</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="{{ route('contact') }}">Contact</a></li> // 編集
+      </ul>
+    </nav><!-- .nav-menu -->
+
+    <div class="header-social-links">
+      <a href="#" class="twitter"><i class="icofont-twitter"></i></a>
+      <a href="#" class="facebook"><i class="icofont-facebook"></i></a>
+      <a href="#" class="instagram"><i class="icofont-instagram"></i></a>
+      <a href="#" class="linkedin"><i class="icofont-linkedin"></i></i></a>
+    </div>
+  </div>
+</header>
+<!-- End Header -->
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutController;
+use App\Models\Brand;
+use App\Models\Multipic;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+    $abouts = DB::table('home_abouts')->first();
+    $images = Multipic::all();
+
+    return view('home')
+        ->with('brands', $brands)
+        ->with('abouts', $abouts)
+        ->with('images', $images);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
+
+// Home Abut All Route
+Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
+Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about');
+Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
+Route::get('/about/edit/{id}', [AboutController::class, 'editAbout']);
+Route::post('/update/home_about/{id}', [AboutController::class, 'updateAbout']);
+Route::get('/about/delete/{id}', [AboutController::class, 'deleteAbout']);
+
+// Portfolio Page Route
+Route::get('/portfolio', [AboutController::class, 'portfolio'])->name('portfolio');
+
+// Admin Contact Page Route
+Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('admin.contact');
+Route::get('/admin/add/contact', [ContactController::class, 'adminAddContact'])->name('add.contact');
+Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContact'])->name('store.contact');
+
+// Home Contact Page Route
+Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
+
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+```
+
++ `ContactController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Contact;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class ContactController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function adminContact()
+    {
+        $contacts = Contact::all();
+
+        return view('admin.contact.index')
+            ->with('contacts', $contacts);
+    }
+
+    public function adminAddContact()
+    {
+        return view('admin.contact.create');
+    }
+
+    public function adminStoreContact(Request $request)
+    {
+        Contact::insert([
+            'address' => $request->address,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'created_at' => Carbon::now(),
+        ]);
+
+        return redirect()->route('admin.contact')
+            ->with('success', 'Contact Inserted Successfully');
+    }
+
+    public function contact()
+    {
+        $contacts = DB::table('contacts')->first();
+
+        return view('pages.contact')
+            ->with('contacts', $contacts);
+    }
+}
+```
+
++ `resources/views/pages/contact.blade.php`ファイルを作成<br>
+
+```
+@extends('layouts.master_home')
+
+@section('home_content')
+<!-- ======= Breadcrumbs ======= -->
+<section id="breadcrumbs" class="breadcrumbs">
+  <div class="container">
+
+    <div class="d-flex justify-content-between align-items-center">
+      <h2>Contact</h2>
+      <ol>
+        <li><a href="index.html">Home</a></li>
+        <li>Contact</li>
+      </ol>
+    </div>
+
+  </div>
+</section><!-- End Breadcrumbs -->
+
+<!-- ======= Contact Section ======= -->
+<div class="map-section">
+  <iframe style="border:0; width: 100%; height: 350px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d12097.433213460943!2d-74.0062269!3d40.7101282!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0xb89d1fe6bc499443!2sDowntown+Conference+Center!5e0!3m2!1smk!2sbg!4v1539943755621" frameborder="0" allowfullscreen></iframe>
+</div>
+
+<section id="contact" class="contact">
+  <div class="container">
+    <div class="row justify-content-center" data-aos="fade-up">
+      <div class="col-lg-10">
+        <div class="info-wrap">
+          <div class="row">
+            <div class="col-lg-4 info">
+              <i class="icofont-google-map"></i>
+              <h4>Location:</h4>
+              <p>{{ $contacts->address }}</p>
+            </div>
+
+            <div class="col-lg-4 info mt-4 mt-lg-0">
+              <i class="icofont-envelope"></i>
+              <h4>Email:</h4>
+              <p>{{ $contacts->email }}</p>
+            </div>
+
+            <div class="col-lg-4 info mt-4 mt-lg-0">
+              <i class="icofont-phone"></i>
+              <h4>Call:</h4>
+              <p>{{ $contacts->phone }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-5 justify-content-center" data-aos="fade-up">
+      <div class="col-lg-10">
+        <form action="forms/contact.php" method="post" role="form" class="php-email-form">
+          <div class="form-row">
+            <div class="col-md-6 form-group">
+              <input type="text" name="name" class="form-control" id="name" placeholder="Your Name" data-rule="minlen:4" data-msg="Please enter at least 4 chars" />
+              <div class="validate"></div>
+            </div>
+            <div class="col-md-6 form-group">
+              <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" data-rule="email" data-msg="Please enter a valid email" />
+              <div class="validate"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" data-rule="minlen:4" data-msg="Please enter at least 8 chars of subject" />
+            <div class="validate"></div>
+          </div>
+          <div class="form-group">
+            <textarea class="form-control" name="message" rows="5" data-rule="required" data-msg="Please write something for us" placeholder="Message"></textarea>
+            <div class="validate"></div>
+          </div>
+          <div class="mb-3">
+            <div class="loading">Loading</div>
+            <div class="error-message"></div>
+            <div class="sent-message">Your message has been sent. Thank you!</div>
+          </div>
+          <div class="text-center"><button type="submit">Send Message</button></div>
+        </form>
+      </div>
+
+    </div>
+
+  </div>
+</section><!-- End Contact Section -->
+@endsection
+```
