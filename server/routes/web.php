@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ChangePass;
 use App\Models\Brand;
 use App\Models\Multipic;
 // use App\Models\User;
@@ -93,3 +94,6 @@ Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
 })->name('dashboard');
 
 Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+
+// Change Password and User Profile Route
+Route::get('/user/password', [ChangePass::class, 'cPassword'])->name('change.password');
