@@ -84,8 +84,6 @@ Route::get('/message/delete/{id}', [ContactController::class, 'deleteMessage']);
 Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
 Route::post('/contact/form', [ContactController::class, 'contactForm'])->name('contact.form');
 
-
-
 Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
     // $users = User::all();
     // $users = DB::table('users')->get();
@@ -97,3 +95,4 @@ Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logou
 
 // Change Password and User Profile Route
 Route::get('/user/password', [ChangePass::class, 'cPassword'])->name('change.password');
+Route::post('/password/update', [ChangePass::class, 'updatePassword'])->name('password.update');
