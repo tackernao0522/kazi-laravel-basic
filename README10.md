@@ -1,3 +1,8 @@
+## Change Password Option Part1
+
++ `resources/views/admin/admin_master.blade.php`を編集<br>
+
+```
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 
@@ -133,15 +138,15 @@
               <!-- User Account -->
               <li class="dropdown user-menu">
                 <button href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
-                  <img src="{{ Auth::user()->profile_photo_url }}" class="user-image" alt="User Image" />
-                  <span class="d-none d-lg-inline-block">{{ Auth::user()->name }}</span>
+                  <img src="{{ Auth::user()->profile_photo_url }}" class="user-image" alt="User Image" /> // 編集
+                  <span class="d-none d-lg-inline-block">{{ Auth::user()->name }}</span> // 編集
                 </button>
                 <ul class="dropdown-menu dropdown-menu-right">
                   <!-- User image -->
                   <li class="dropdown-header">
-                    <img src="{{ Auth::user()->profile_photo_url }}" class="img-circle" alt="User Image" />
+                    <img src="{{ Auth::user()->profile_photo_url }}" class="img-circle" alt="User Image" /> // 編集
                     <div class="d-inline-block">
-                    {{ Auth::user()->name }} <small class="pt-1">{{ Auth::user()->email }}</small>
+                    {{ Auth::user()->name }} <small class="pt-1">{{ Auth::user()->email }}</small> // 編集
                     </div>
                   </li>
 
@@ -151,8 +156,8 @@
                     </a>
                   </li>
                   <li>
-                    <a href="{{ route('change.password') }}">
-                      <i class="mdi mdi-email"></i> Change Password
+                    <a href="{{ route('change.password') }}"> // 編集
+                      <i class="mdi mdi-email"></i> Change Password // 編集
                     </a>
                   </li>
                   <li>
@@ -217,3 +222,160 @@
   <script src="{{ asset('backend/assets/js/custom.js') }}"></script>
 </body>
 </html>
+```
+
++ `$ php artisan make:controller ChangePass`を実行<br>
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ChangePass;
+use App\Models\Brand;
+use App\Models\Multipic;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+    $abouts = DB::table('home_abouts')->first();
+    $images = Multipic::all();
+
+    return view('home')
+        ->with('brands', $brands)
+        ->with('abouts', $abouts)
+        ->with('images', $images);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
+
+// Home Abut All Route
+Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
+Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about');
+Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
+Route::get('/about/edit/{id}', [AboutController::class, 'editAbout']);
+Route::post('/update/home_about/{id}', [AboutController::class, 'updateAbout']);
+Route::get('/about/delete/{id}', [AboutController::class, 'deleteAbout']);
+
+// Portfolio Page Route
+Route::get('/portfolio', [AboutController::class, 'portfolio'])->name('portfolio');
+
+// Admin Contact Page Route
+Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('admin.contact');
+Route::get('/admin/add/contact', [ContactController::class, 'adminAddContact'])->name('add.contact');
+Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContact'])->name('store.contact');
+Route::get('/admin/message', [ContactController::class, 'adminMessage'])->name('admin.message');
+Route::get('/message/delete/{id}', [ContactController::class, 'deleteMessage']);
+
+// Home Contact Page Route
+Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
+Route::post('/contact/form', [ContactController::class, 'contactForm'])->name('contact.form');
+
+
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+
+// Change Password and User Profile Route
+Route::get('/user/password', [ChangePass::class, 'cPassword'])->name('change.password'); // 追記
+```
+
++ `resources/views/admin/body/change_password.blade.php`ファイルを作成<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="card card-default">
+  <div class="card-header card-header-border-bottom">
+    <h2>Change Password</h2>
+  </div>
+  <div class="card-body">
+    <form class="form-pill">
+      <div class="form-group">
+        <label for="exampleFormControlInput3">Current Password</label>
+        <input type="password" class="form-control" id="exampleFormControlInput3" placeholder="Current Password">
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlPassword3">New Password</label>
+        <input type="password" class="form-control" id="exampleFormControlPassword3" placeholder="New Password">
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlPassword3">Confirm Password</label>
+        <input type="password" class="form-control" id="exampleFormControlPassword3" placeholder="Confirm Password">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-default">Save</button>
+    </form>
+  </div>
+</div>
+@endsection
+```
+
++ `app/Http/Controllers/ChangePass.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ChangePass extends Controller
+{
+    public function cPassword()
+    {
+        return view('admin.body.change_password');
+    }
+}
+```
