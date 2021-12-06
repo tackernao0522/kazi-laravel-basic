@@ -1,3 +1,8 @@
+## How to add Toster in Project
+
++ `resources/views/admin/admin_master.blade.php`を編集<br>
+
+```
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 
@@ -24,7 +29,7 @@
   <!-- SLEEK CSS -->
   <link id="sleek-css" rel="stylesheet" href="{{ asset('backend/assets/css/sleek.css') }}" />
 
-  <link rel="stylesheet" type="text.css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" />
+  <link rel="stylesheet" type="text.css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" /> // 追記
 
   <!-- FAVICON -->
   <link href="assets/img/favicon.png" rel="shortcut icon" />
@@ -216,9 +221,9 @@
   <script src="{{ asset('backend/assets/js/map.js') }}"></script>
   <script src="{{ asset('backend/assets/js/custom.js') }}"></script>
 
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script> // 追記
 
-  <script>
+  <script> // 追記
     @if(Session::has('message'))
     var type = "{{ Session::get('alert-type', 'info') }}"
     switch (type) {
@@ -240,3 +245,303 @@
 </body>
 
 </html>
+```
+
++ `resources/views/admin/brand/index.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">All Brand</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">SL No</th>
+                                <th scope="col">Brand Name</th>
+                                <th scope="col">Brand Image</th>
+                                <th scope="col">Created_at</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{-- @php ($i = 1) --}}
+                            @foreach($brands as $brand)
+                            <tr>
+                                <th scope="row">{{ $brands->firstItem() + $loop->index }}</th>
+                                <td>{{ $brand->brand_name }}</td>
+                                <td><img src="{{ asset($brand->brand_image) }}" style="height: 40px; width: 70px"></td>
+                                <td>
+                                    @if($brand->created_at == NULL)
+                                    <span class="text-danger">No Date Set</span>
+                                    @else
+                                    {{ Carbon\Carbon::parse($brand->created_at)->diffForHumans() }}
+                                    @endif
+                                </td>
+                                <td>
+                                    <a href="{{ url('brand/edit/'. $brand->id) }}" class="btn btn-info">Edit</a>
+                                    <a href="{{ url('brand/delete/' . $brand->id) }}" onclick="return confirm('Are you sure to delete?')" class="btn btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    {{ $brands->links() }}
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">Add Brand</div>
+                    <div class="card-body">
+                        <form action="{{ route('store.brand') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Brand Name</label>
+                                <input type="text" class="form-control" name="brand_name" id="exampleInputEmail1" aria-describedby="emailHelp">
+                                @error('brand_name')
+                                <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Brand Image</label>
+                                <input type="file" class="form-control" name="brand_image" id="exampleInputEmail1" aria-describedby="emailHelp">
+                                @error('brand_image')
+                                <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Brand</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+```
+
++ `BrandController.php`を編集<br>
+
+```
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Brand;
+use App\Models\Multipic;
+use Illuminate\Support\Carbon;
+use Image;
+use Auth;
+
+class BrandController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function allBrand()
+    {
+        $brands = Brand::latest()->paginate(5);
+
+        return view('admin.brand.index', compact('brands'));
+    }
+
+    public function storeBrand(Request $request)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|unique:brands|min:4',
+                'brand_image' => 'required|mimes:jpg,jpeg,png',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $brand_image = $request->file('brand_image');
+
+        $name_gen = hexdec(uniqid()) . '.' . $brand_image->getClientOriginalExtension();
+        Image::make($brand_image)->resize(300, 200)->save('image/brand/' . $name_gen);
+
+        $last_img = 'image/brand/' . $name_gen;
+
+
+        Brand::insert([
+            'brand_name' => $request->brand_name,
+            'brand_image' => $last_img,
+            'created_at' => Carbon::now(),
+        ]);
+
+        $notification = array(
+            'message' => 'Brand Inserted Successfully',
+            'alert-type' => 'success'
+        );
+
+        return redirect()->back()->with($notification);
+    }
+
+    public function edit($id)
+    {
+        $brand = Brand::find($id);
+
+        return view('admin.brand.edit')->with('brand', $brand);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validatedData = $request->validate(
+            [
+                'brand_name' => 'required|min:4',
+            ],
+            [
+                'brand_name.required' => 'Please Input Brand Name',
+                'brand_name.min' => 'Brand Longer then 4 Character',
+            ]
+        );
+
+        $old_image = $request->old_image;
+
+        $brand_image = $request->file('brand_image');
+
+        if ($brand_image) {
+            $name_gen = hexdec(uniqid());
+            $image_ext = strtolower($brand_image->getClientOriginalExtension());
+            $img_name = $name_gen . '.' . $image_ext;
+            $up_location = 'image/brand/';
+            $last_img = $up_location . $img_name;
+            $brand_image->move($up_location, $img_name);
+
+            unlink($old_image);
+
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'brand_image' => $last_img,
+                'created_at' => Carbon::now(),
+            ]);
+
+            $notification = array(
+                'message' => 'Brand Updated Successfully',
+                'alert-type' => 'info'
+            );
+
+            return redirect()->back()->with($notification);
+        } else {
+            Brand::find($id)->update([
+                'brand_name' => $request->brand_name,
+                'created_at' => Carbon::now(),
+            ]);
+
+            $notification = array(
+                'message' => 'Brand Updated Successfully',
+                'alert-type' => 'info'
+            );
+
+            return redirect()->back()->with($notification);
+        }
+    }
+
+    public function delete($id)
+    {
+        $image = Brand::find($id);
+        $old_image = $image->brand_image;
+        unlink($old_image);
+
+        Brand::find($id)->delete();
+
+        $notification = array(
+            'message' => 'Brand Delete Successfully',
+            'alert-type' => 'error'
+        );
+
+        return redirect()->back()->with($notification);
+    }
+
+    public function multipic()
+    {
+        $images = Multipic::all();
+
+        return view('admin.multipic.index', compact('images'));
+    }
+
+    public function storeImg(Request $request)
+    {
+        $image = $request->file('image');
+
+        foreach ($image as $multi_img) {
+            $name_gen = hexdec(uniqid()) . '.' . $multi_img->getClientOriginalExtension();
+            Image::make($multi_img)->resize(300, 300)->save('image/multi/' . $name_gen);
+
+            $last_img = 'image/multi/' . $name_gen;
+
+
+            Multipic::insert([
+                'image' => $last_img,
+                'created_at' => Carbon::now(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Multi Image Inserted Successfully');
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+
+        return redirect()->route('login')->with('success', 'User Logout');
+    }
+}
+```
+
++ `resources/views/admin/brand/edit.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="py-12">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">Edit brand</div>
+          <div class="card-body">
+            <form action="{{ url('brand/update/' . $brand->id) }}" method="POST" enctype="multipart/form-data">
+              @csrf
+              <input type="hidden" name="old_image" value="{{ $brand->brand_image }}">
+              <div class="form-group">
+                <label for="exampleInputEmail1">Update Brand Name</label>
+                <input type="text" class="form-control" name="brand_name" id="exampleInputEmail1" aria-describedby="emailHelp" value="{{ old('brand_name', $brand->brand_name) }}">
+                @error('brand_name')
+                <span class="text-danger">{{ $message }}</span>
+                @enderror
+              </div>
+              <div class="form-group">
+                <label for="exampleInputEmail1">Update Brand Image</label>
+                <input type="file" class="form-control" name="brand_image" value="{{ $brand->brand_image }}" id="exampleInputEmail1" aria-describedby="emailHelp">
+                @error('brand_image')
+                <span class="text-danger">{{ $message }}</span>
+                @enderror
+              </div>
+
+              <div class="form-group">
+                <img src="{{ asset($brand->brand_image) }}" style="width: 400px; height: 200px">
+              </div>
+              <button type="submit" class="btn btn-primary">Update Brand</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+@endsection
+```
