@@ -411,3 +411,267 @@ class ChangePass extends Controller
 </div>
 @endsection
 ```
+
+## Change User Profile Part2
+
++ `resources/views/admin/body/update_profile.blade.php`を編集<br>
+
+```
+@extends('admin.admin_master')
+
+@section('admin')
+<div class="card card-default">
+  <div class="card-header card-header-border-bottom">
+    <h2>User Profile Update</h2>
+  </div>
+  @if(session('success'))
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>{{ session("success") }}</strong>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  @endif
+  <div class="card-body">
+    <form method="POST" action="{{ route('update.user.profile') }}" class="form-pill">
+      @csrf
+      <div class="form-group">
+        <label for="exampleFormControlInput3">User Name</label>
+        <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}">
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlInput3">User Email</label>
+        <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-default">Update</button>
+    </form>
+  </div>
+</div>
+@endsection
+```
+
++ `web.php`を編集<br>
+
+```
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ChangePass;
+use App\Models\Brand;
+use App\Models\Multipic;
+// use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/', function () {
+    $brands = DB::table('brands')->get();
+    $abouts = DB::table('home_abouts')->first();
+    $images = Multipic::all();
+
+    return view('home')
+        ->with('brands', $brands)
+        ->with('abouts', $abouts)
+        ->with('images', $images);
+});
+
+Route::get('/home', function () {
+    echo 'This is Home Page';
+});
+
+Route::get('/about', function () {
+    return view('about');
+});
+
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+
+// Category Controller
+Route::get('/category/all', [CategoryController::class, 'allCat'])->name('all.category');
+Route::post('/category/add', [CategoryController::class, 'addCat'])->name('store.category');
+Route::get('/category/edit/{id}', [CategoryController::class, 'edit']);
+Route::post('/category/update/{id}', [CategoryController::class, 'update']);
+Route::get('/softdelete/category/{id}', [CategoryController::class, 'softDelete']);
+Route::get('/category/restore/{id}', [CategoryController::class, 'restore']);
+Route::get('/pdelete/category/{id}', [CategoryController::class, 'pDelete']);
+
+// Brand Controller
+Route::get('/brand/all', [BrandController::class, 'allBrand'])->name('all.brand');
+Route::post('/brand/add', [BrandController::class, 'storeBrand'])->name('store.brand');
+Route::get('/brand/edit/{id}', [BrandController::class, 'edit']);
+Route::post('/brand/update/{id}', [BrandController::class, 'update']);
+Route::get('/brand/delete/{id}', [BrandController::class, 'delete']);
+
+// Multi Image Route
+Route::get('/multi/image', [BrandController::class, 'multipic'])->name('multi.image');
+Route::post('/multi/add', [BrandController::class, 'storeImg'])->name('store.image');
+
+// Admin All Route
+Route::get('/home/slider', [HomeController::class, 'homeSlider'])->name('home.slider');
+Route::get('/add/slider', [HomeController::class, 'addSlider'])->name('add.slider');
+Route::post('/store/slider', [HomeController::class, 'storeSlider'])->name('store.slider');
+
+// Home Abut All Route
+Route::get('/home/about', [AboutController::class, 'homeAbout'])->name('home.about');
+Route::get('/add/about', [AboutController::class, 'addAbout'])->name('add.about');
+Route::post('/store/about', [AboutController::class, 'storeAbout'])->name('store.about');
+Route::get('/about/edit/{id}', [AboutController::class, 'editAbout']);
+Route::post('/update/home_about/{id}', [AboutController::class, 'updateAbout']);
+Route::get('/about/delete/{id}', [AboutController::class, 'deleteAbout']);
+
+// Portfolio Page Route
+Route::get('/portfolio', [AboutController::class, 'portfolio'])->name('portfolio');
+
+// Admin Contact Page Route
+Route::get('/admin/contact', [ContactController::class, 'adminContact'])->name('admin.contact');
+Route::get('/admin/add/contact', [ContactController::class, 'adminAddContact'])->name('add.contact');
+Route::post('/admin/store/contact', [ContactController::class, 'adminStoreContact'])->name('store.contact');
+Route::get('/admin/message', [ContactController::class, 'adminMessage'])->name('admin.message');
+Route::get('/message/delete/{id}', [ContactController::class, 'deleteMessage']);
+
+// Home Contact Page Route
+Route::get('/contact', [ContactController::class, 'contact'])->name('contact');
+Route::post('/contact/form', [ContactController::class, 'contactForm'])->name('contact.form');
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    // $users = User::all();
+    // $users = DB::table('users')->get();
+
+    return view('admin.index');
+})->name('dashboard');
+
+Route::get('/user/logout', [BrandController::class, 'logout'])->name('user.logout');
+
+// Change Password and User Profile Route
+Route::get('/user/password', [ChangePass::class, 'cPassword'])->name('change.password');
+Route::post('/password/update', [ChangePass::class, 'updatePassword'])->name('password.update');
+
+// User Profile
+Route::get('/user/profile', [ChangePass::class, 'pUpdate'])->name('profile.update');
+Route::post('/user/profile/update', [ChangePass::class, 'updateProfile'])->name('update.user.profile');
+```
+
++ `ChangePass.php`を編集<br>
+
+```<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+
+class ChangePass extends Controller
+{
+    public function cPassword()
+    {
+        return view('admin.body.change_password');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validateData = $request->validate([
+            'oldPassword' => 'required',
+            'password' => 'required|confirmed'
+        ]);
+
+        $hashedPassword = Auth::user()->password;
+        if (Hash::check($request->oldPassword, $hashedPassword)) {
+            $user = User::find(Auth::id());
+            $user->password = Hash::make($request->password);
+            $user->save();
+            Auth::logout();
+
+            return redirect()->route('login')
+                ->with('success', 'Password Is Change Successfully');
+        } else {
+            return redirect()->back()
+                ->with('error', 'Current Password Is Invalid');
+        }
+    }
+
+    public function pUpdate()
+    {
+        if (Auth::user()) {
+            $user = User::find(Auth::user()->id);
+            if ($user) {
+                return view('admin.body.update_profile', compact('user'));
+            }
+        }
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = User::find(Auth::user()->id);
+        if ($user) {
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->save();
+
+            return redirect()->back()
+                ->with('success', 'User Profile Is Update Successfully');
+        } else {
+            return redirect()->back();
+        }
+    }
+}
+```
+
++ `resources/views/layouts/body/header.blade.php`を編集<br>
+
+```
+<!-- ======= Header ======= -->
+<header id="header" class="fixed-top">
+  <div class="container d-flex align-items-center">
+    <h1 class="logo mr-auto"><a href="index.html"><span>Com</span>pany</a></h1>
+    <!-- Uncomment below if you prefer to use an image logo -->
+    <!-- <a href="index.html" class="logo mr-auto"><img src="assets/img/logo.png" alt="" class="img-fluid"></a>-->
+
+    <nav class="nav-menu d-none d-lg-block">
+      <ul>
+        <li class="active"><a href="/">Home</a></li>
+
+        <li class="drop-down"><a href="">About</a>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="team.html">Team</a></li>
+            <li><a href="testimonials.html">Testimonials</a></li>
+            <li class="drop-down"><a href="#">Deep Drop Down</a>
+              <ul>
+                <li><a href="#">Deep Drop Down 1</a></li>
+                <li><a href="#">Deep Drop Down 2</a></li>
+                <li><a href="#">Deep Drop Down 3</a></li>
+                <li><a href="#">Deep Drop Down 4</a></li>
+                <li><a href="#">Deep Drop Down 5</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+
+        <li><a href="services.html">Services</a></li>
+        <li><a href="{{ route('portfolio') }}">Portfolio</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <li><a href="{{ route('contact') }}">Contact</a></li>
+        <li><a href="{{ route('login') }}">Login</a></li> // 追記
+      </ul>
+    </nav><!-- .nav-menu -->
+
+    <div class="header-social-links">
+      <a href="#" class="twitter"><i class="icofont-twitter"></i></a>
+      <a href="#" class="facebook"><i class="icofont-facebook"></i></a>
+      <a href="#" class="instagram"><i class="icofont-instagram"></i></a>
+      <a href="#" class="linkedin"><i class="icofont-linkedin"></i></i></a>
+    </div>
+  </div>
+</header>
+<!-- End Header -->
+```
