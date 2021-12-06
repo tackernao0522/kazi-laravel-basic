@@ -35,4 +35,14 @@ class ChangePass extends Controller
                 ->with('error', 'Current Password Is Invalid');
         }
     }
+
+    public function pUpdate()
+    {
+        if (Auth::user()) {
+            $user = User::find(Auth::user()->id);
+            if ($user) {
+                return view('admin.body.update_profile', compact('user'));
+            }
+        }
+    }
 }
